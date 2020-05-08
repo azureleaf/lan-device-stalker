@@ -10,6 +10,7 @@ autopep8 = "*"
 scapy = "*"
 flake8 = "*"
 psutil = "*"
+sqlalchemy = "*"
 
 [requires]
 python_version = "3.6"
