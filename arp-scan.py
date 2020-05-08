@@ -1,5 +1,6 @@
 import subprocess
 import psutil
+import re
 
 
 def get_interface():
@@ -11,22 +12,45 @@ def get_interface():
             return interface
 
 
-def get_devices_list(interface):
+def get_devices(interface):
     """ Get list of devices on the LAN, then record it to database
     """
 
     # run shell command of this computer
-    test = subprocess.Popen(
-        ["sudo", "arp-scan", "-l", "-I", interface],
+    cmd = subprocess.Popen(
+        ["sudo", "arp-scan", "-l", "-q", "-I", interface],
         stdout=subprocess.PIPE)
-    output = test.communicate()[0]
-    return str(output)
+    scan_result = cmd.communicate()[0]
+
+    devices = format_arp_scan_result(str(scan_result))
+
+    return devices
+
+
+def format_arp_scan_result(scan_result):
+
+    # turn plain string \t \n into actual tab & line break
+    scan_result = re.sub(r'\\t', r'\t', scan_result)
+    scan_result = re.sub(r'\\n', r'\n', scan_result)
+
+    # convert multiline str into list
+    devices = []
+    for line in scan_result.splitlines():
+
+        # extract lines which has IP data, thereby remove unnecessary lines
+        if re.match(r'192', line) is not None:
+            # convert tab-deliminated items into array,
+            #   then remove whitespaces
+            device = [x.strip() for x in line.split("\t")]
+            devices.append(device)
+
+    return devices
 
 
 def wrapper():
     interface = get_interface()
-    result = get_devices_list(interface)
-    print(result)
+    devices = get_devices(interface)
+    print(devices)
 
 
 if __name__ == "__main__":
