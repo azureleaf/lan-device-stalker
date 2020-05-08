@@ -7,7 +7,8 @@ Periodically scan MAC addresses of the devices on the same local LAN
 - [Lan Device Stalker](#lan-device-stalker)
   - [ToC](#toc)
   - [Run](#run)
-  - [Dev Notes](#dev-notes)
+    - [(option) Scan with Scapy](#option-scan-with-scapy)
+  - [Reference](#reference)
   - [About Scapy](#about-scapy)
     - [Interactive Shell](#interactive-shell)
   - [Terms](#terms)
@@ -25,15 +26,23 @@ Periodically scan MAC addresses of the devices on the same local LAN
 
 ## Run
 
-1. `pipenv install`
-2. `sudo $(PIPENV_IGNORE_VIRTUALENVS=1 pipenv --venv)/bin/python3 scan.py`
+1. `sudo apt install arp-scan`
+   - You need to install arp-scan in your local env
+2. `pipenv shell`
+3. `pipenv install`
+4. `sudo python3 arp-scan.py`
+
+### (option) Scan with Scapy
+
+1. `sudo $(PIPENV_IGNORE_VIRTUALENVS=1 pipenv --venv)/bin/python3 scan.py`
    - Scapy requires `sudo`, however you can't use `sudo python3 app.py` with pipenv
    - Therefore you need to specify the Python of the pipenv directly
 
-## Dev Notes
+## Reference
 
-1. `pipenv shell`
-2. `pipenv install`
+- MAC address vendor list: https://macaddress.io/database-download
+
+
 
 ## About Scapy
 

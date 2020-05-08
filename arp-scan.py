@@ -2,9 +2,11 @@ import subprocess
 import psutil
 import re
 import socket
+import sched
+import time
 import sqlalchemy as db
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def get_interface():
@@ -53,8 +55,10 @@ def format_arp_scan_result(scan_result):
         # convert tab-deliminated items into array,
         # then remove whitespaces
         words = [x.strip() for x in line.split("\t")]
+
+        # check if the 1st word looks like an IPv4 address
         if len(words[0].split(".")) == 4:
-            # check if the string has the valid IPv4 format
+            # check if the string is the valid IPv4 address
             try:
                 socket.inet_aton(words[0])
                 devices.append({
@@ -111,6 +115,23 @@ def summarize_db(db_path, devices):
     return devices_occs
 
 
+def next_run_time(period_min):
+    now = datetime.now()
+    min0 = now.replace(minute=0, second=0, microsecond=0)
+    next_time = min0
+    while True:
+        if next_time > now:
+            print("Next run:", str(next_time))
+            return next_time
+        else:
+            if next_time.minute + period_min >= 60:
+                next_time += timedelta(hours=1)
+                next_time = next_time.replace(minute=0)
+            else:
+                next_time += timedelta(minutes=period_min)
+            continue
+
+
 def wrapper(isScanMode=False):
     db_path = "sqlite:///devices.db"
 
@@ -124,11 +145,16 @@ def wrapper(isScanMode=False):
                           Column('created_at', String)
                           )
 
-    if isScanMode is True:
+    def cycle():
         interface = get_interface()
         devices = get_devices(interface)
         save_to_db(devices, db_path, devices_table)
-        return
+
+    if isScanMode is True:
+        while True:
+            s = sched.scheduler(time.time, time.sleep)
+            s.enterabs(next_run_time(1).timestamp(), 1, cycle)
+            s.run()
 
     summary = summarize_db(db_path, devices_table)
     print(summary)
@@ -136,4 +162,4 @@ def wrapper(isScanMode=False):
 
 
 if __name__ == "__main__":
-    wrapper()
+    wrapper(False)
