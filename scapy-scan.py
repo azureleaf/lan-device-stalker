@@ -10,8 +10,10 @@ def get_interface():
 def ip2mac(ip_addr, mac_list):
     ans, unans = srp(
         Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip_addr),
-        timeout=0.5,
-        retry=0)
+        timeout=0.1,
+        retry=0,
+        verbose=False  # Suppress reports on the terminal
+    )
     for s, r in ans:
         mac_list.append(r[Ether].src)
     return mac_list
@@ -21,7 +23,7 @@ def wrapper():
     get_interface()
 
     mac_list = []
-    for num in range(0, 10):
+    for num in range(0, 15):
         mac_list = ip2mac("192.168.22." + str(num), mac_list)
     print("list", mac_list)
 
