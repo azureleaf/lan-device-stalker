@@ -9,6 +9,7 @@ autopep8 = "*"
 [packages]
 scapy = "*"
 flake8 = "*"
+psutil = "*"
 
 [requires]
 python_version = "3.6"
