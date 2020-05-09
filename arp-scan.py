@@ -115,7 +115,15 @@ def summarize_db(db_path, devices):
     return devices_occs
 
 
-def next_run_time(period_min):
+def next_run_time(interval_min):
+    """
+    Schedule the next running time.
+    Args:
+        interval_min (int): interval between runs in minutes.
+            Should be the divisor of 60: 60, 30, 20, 10, 6, 3, 2, 1
+    Returns
+        (obj) datetime object of the next run time
+    """
     now = datetime.now()
     min0 = now.replace(minute=0, second=0, microsecond=0)
     next_time = min0
@@ -124,16 +132,19 @@ def next_run_time(period_min):
             print("Next run:", str(next_time))
             return next_time
         else:
-            if next_time.minute + period_min >= 60:
+            # When it's almost the end of the hour
+            if next_time.minute + interval_min >= 60:
                 next_time += timedelta(hours=1)
                 next_time = next_time.replace(minute=0)
             else:
-                next_time += timedelta(minutes=period_min)
+                next_time += timedelta(minutes=interval_min)
             continue
 
 
 def wrapper(isScanMode=False):
     db_path = "sqlite:///devices.db"
+    js_path = "history.js"
+    interval = 1
 
     # define the table
     engine = create_engine(db_path)
@@ -153,12 +164,16 @@ def wrapper(isScanMode=False):
     if isScanMode is True:
         while True:
             s = sched.scheduler(time.time, time.sleep)
-            s.enterabs(next_run_time(1).timestamp(), 1, cycle)
+            s.enterabs(next_run_time(interval).timestamp(), 1, cycle)
             s.run()
 
-    summary = summarize_db(db_path, devices_table)
-    print(summary)
-    return summary
+    occs_devices = summarize_db(db_path, devices_table)
+
+    with open(js_path, "w") as fo:
+        fo.write("const history = [\n")
+        for occs_device in occs_devices:
+            fo.write(f"  {str(occs_device)},\n")
+        fo.write("];\n")
 
 
 if __name__ == "__main__":
