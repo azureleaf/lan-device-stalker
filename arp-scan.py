@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 def get_interface():
     '''
     Scan network interfaces, return name of the active valid one
+    Returns:
+        (str): Name of the active interface
     '''
     addrs = psutil.net_if_addrs()
     interfaces = addrs.keys()
@@ -24,6 +26,10 @@ def get_interface():
 def get_devices(interface):
     '''
     Get list of devices on the LAN, then record it to database
+    Args:
+        interface (str): Name of the interface to be arp-scan
+    Returns:
+        devices (list): List of dict of devices & their props
     '''
 
     # run shell command of this computer
@@ -40,6 +46,10 @@ def get_devices(interface):
 def format_arp_scan_result(scan_result):
     '''
     Parse the result text of the arp-scan, return it as a dict
+    Args:
+        scan_result(str): Multi-line text of arp-scan output
+    Returns:
+        devices (list): List of dict of devices scanned
     '''
 
     # turn plain string \t \n into actual tab & line break
@@ -72,7 +82,14 @@ def format_arp_scan_result(scan_result):
     return devices
 
 
-def save_to_db(new_devices, db_path, devices):
+def save_to_db(new_devices, db_path, devices_table):
+    """
+    Add new scan result to the DB
+    Args:
+        new_devices (list): List of dict
+        db_path (str): SQLite DB name
+        devices_table (obj): SQLAlchemy Table object
+    """
     engine = create_engine(db_path)
     conn = engine.connect()
     meta = MetaData(engine)
@@ -81,7 +98,7 @@ def save_to_db(new_devices, db_path, devices):
         meta.create_all(engine)
         print("DB created.")
 
-    query = db.insert(devices)
+    query = db.insert(devices_table)
     conn.execute(query, new_devices)
 
 
@@ -142,9 +159,10 @@ def next_run_time(interval_min):
 
 
 def wrapper(isScanMode=False):
+    # params
     db_path = "sqlite:///devices.db"
     js_path = "history.js"
-    interval = 1
+    interval = 1  # min
 
     # define the table
     engine = create_engine(db_path)
@@ -157,6 +175,7 @@ def wrapper(isScanMode=False):
                           )
 
     def cycle():
+        '''scanning process'''
         interface = get_interface()
         devices = get_devices(interface)
         save_to_db(devices, db_path, devices_table)
@@ -167,8 +186,8 @@ def wrapper(isScanMode=False):
             s.enterabs(next_run_time(interval).timestamp(), 1, cycle)
             s.run()
 
+    # save DB data as a constant in the JS file
     occs_devices = summarize_db(db_path, devices_table)
-
     with open(js_path, "w") as fo:
         fo.write("const history = [\n")
         for occs_device in occs_devices:
