@@ -9,6 +9,10 @@ import sqlalchemy as db
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 from datetime import datetime, timedelta
 
+# Set up the logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)  # function name
+
 
 def get_interface():
     '''
@@ -17,7 +21,7 @@ def get_interface():
         (str): Name of the active interface
     '''
     addrs = psutil.net_if_addrs()
-    interfaces = addrs.keys() # lo, docker0, wlp2s0, enp1s0, etc.
+    interfaces = addrs.keys()  # lo, docker0, wlp2s0, enp1s0, etc.
 
     # Return the network interface name which is up
     for interface in interfaces:
@@ -36,7 +40,7 @@ def get_interface():
             if socket.AF_INET in [snicaddr.family for snicaddr in interface_addrs]:
                 return interface
 
-    logging.error("Error: No network interface is up!")
+    logger.error("Error: No network interface is up!")
     return None
 
 
@@ -175,11 +179,12 @@ def next_run_time(interval_min):
             continue
 
 
-def wrapper(isScanMode=False):
+def wrapper():
     # params
     db_path = "sqlite:///devices.db"
     js_path = "history.js"
-    interval = 1  # min
+    interval_min = 1
+    cycle_total = 2
 
     # define the table
     engine = create_engine(db_path)
@@ -198,20 +203,24 @@ def wrapper(isScanMode=False):
         devices = get_devices(interface)
         save_to_db(devices, db_path, devices_table)
 
-    if isScanMode is True:
-        while True:
-            s = sched.scheduler(time.time, time.sleep)
-            s.enterabs(next_run_time(interval).timestamp(), 1, cycle)
-            s.run()
+    cycle_count = 0
+    while cycle_count < cycle_total:
+        s = sched.scheduler(time.time, time.sleep)
+        s.enterabs(next_run_time(interval_min).timestamp(), 1, cycle)
+        s.run()
+        cycle_count += 1
 
-    # save DB data as a constant in the JS file
+    # Save DB contents as a constant in the JS file
+    # to embed them in the web page
     occs_devices = summarize_db(db_path, devices_table)
     with open(js_path, "w") as fo:
         fo.write("const history = [\n")
         for occs_device in occs_devices:
             fo.write(f"  {str(occs_device)},\n")
         fo.write("];\n")
+        logger.info(
+            "Successfully summarized the scan results to the JS file.")
 
 
 if __name__ == "__main__":
-    wrapper(True)
+    wrapper()
