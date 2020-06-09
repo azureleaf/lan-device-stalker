@@ -1,6 +1,6 @@
 # Lan Device Stalker
 
-Periodically scan MAC addresses of the devices on the same local LAN
+- Periodically scan MAC addresses of the devices within the local LAN (IPv4)
 
 ## ToC
 
@@ -26,11 +26,12 @@ Periodically scan MAC addresses of the devices on the same local LAN
 
 ## Run
 
+1. This script runs on the Linux only
 1. `sudo apt install arp-scan`
    - You need to install arp-scan in your local env
-2. `pipenv shell`
-3. `pipenv install`
-4. `sudo $(PIPENV_IGNORE_VIRTUALENVS=1 pipenv --venv)/bin/python3 arp-scan.py`
+1. `pipenv shell`
+1. `pipenv install`
+1. `sudo $(PIPENV_IGNORE_VIRTUALENVS=1 pipenv --venv)/bin/python3 arp-scan.py`
    - Scapy requires `sudo`, however you can't use `sudo python3 app.py` with pipenv
    - Therefore you need to specify the Python of the pipenv directly
 
