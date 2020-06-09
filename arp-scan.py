@@ -4,6 +4,7 @@ import re
 import socket
 import sched
 import time
+import logging
 import sqlalchemy as db
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 from datetime import datetime, timedelta
@@ -16,11 +17,27 @@ def get_interface():
         (str): Name of the active interface
     '''
     addrs = psutil.net_if_addrs()
-    interfaces = addrs.keys()
+    interfaces = addrs.keys() # lo, docker0, wlp2s0, enp1s0, etc.
+
+    # Return the network interface name which is up
     for interface in interfaces:
         # Ignore loopback & docker
-        if "docker" not in interface and "lo" not in interface:
-            return interface
+        # "lo" shares the same AF (Address Family) with active network interface
+        if "docker" not in interface and interface != "lo":
+
+            # Without adding "[]",
+            # it may bring syntax error in the following processes
+            interface_addrs = psutil.net_if_addrs().get(interface) or []
+
+            # Seemingly, socket.AF_INET returns
+            # the address family of the active network interface.
+            # Result of net_if_addrs() also
+            # contains the address family for each interface
+            if socket.AF_INET in [snicaddr.family for snicaddr in interface_addrs]:
+                return interface
+
+    logging.error("Error: No network interface is up!")
+    return None
 
 
 def get_devices(interface):
@@ -52,13 +69,13 @@ def format_arp_scan_result(scan_result):
         devices (list): List of dict of devices scanned
     '''
 
-    # turn plain string \t \n into actual tab & line break
+    # Convert plain string \t \n into actual tab & line break
     scan_result = re.sub(r'\\t', r'\t', scan_result)
     scan_result = re.sub(r'\\n', r'\n', scan_result)
 
     now = str(datetime.now())
 
-    # convert multiline str into list,
+    # Convert multiline str into list,
     # then extract the lines of IP addrs & MAC addrs
     devices = []
     for line in scan_result.splitlines():
@@ -173,6 +190,7 @@ def wrapper(isScanMode=False):
                           Column('mac_addr', String),
                           Column('created_at', String)
                           )
+    meta.create_all(engine)
 
     def cycle():
         '''scanning process'''
@@ -196,4 +214,4 @@ def wrapper(isScanMode=False):
 
 
 if __name__ == "__main__":
-    wrapper(False)
+    wrapper(True)
