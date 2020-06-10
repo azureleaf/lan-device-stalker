@@ -7,14 +7,15 @@
   <div id="device_occurence_chart"></div>
 
   <script src="./devices.js"></script>
+  <script src="./history.js"></script>
 
   <script>
     // set the dimensions and margins of the graph
     var margin = { top: 30, right: 30, bottom: 30, left: 100 },
       // width:height ratio can be changed
       // chart will be stretched, but text labels won't be
-      width = 1000 - margin.left - margin.right,
-      height = 450 - margin.top - margin.bottom;
+      width = 2000 - margin.left - margin.right,
+      height = 800 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     var svg = d3
@@ -25,15 +26,28 @@
       .append("g") // <g> is a tag to group graphic elements (<line>, <rect>, etc.) inside <svg>
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")"); // SVG offset
 
-    // Labels of row and columns
-    var timeStamps = [
-      "2020-06-10 11:30:01.982251",
-      "2020-06-10 12:00:01.982251",
-    ]; // x-label
-    var devices = ["a0:b0:c0:d0:e0:f0", "a1:b0:c0:d0:e0:f0"]; // y-label
+    // Format the device occurence history for D3.js
+    const recordsByOccurence = (function formatRecords(devices) {
+      occs4all = [];
 
-    // Build X scales and axis:
-    var x = d3.scaleBand().range([0, width]).domain(timeStamps).padding(0.01);
+      // Loop for all the devices
+      devices.forEach((device) => {
+        // Destructure the occurences for this device
+        device.occ.forEach((timestamp) => {
+          occs4all.push({
+            group: timestamp,
+            variable: device.mac_addr,
+            value: 1,
+          });
+        });
+      });
+      return occs4all;
+    })(
+      recordsByDevice // from history.js
+    );
+
+    // Build X scales and axis: use the values from history.js
+    var x = d3.scaleBand().range([0, width]).domain(timestamps).padding(0.01);
 
     svg
       .append("g")
@@ -44,7 +58,7 @@
     var y = d3
       .scaleBand() // very basic scale
       .range([height, 0])
-      .domain(devices) // y-label
+      .domain(macAddrs) // y-label
       .padding(0.01); // gap between tiles
     svg.append("g").call(d3.axisLeft(y)); // .call() is used to apply func(s) to selections
 
@@ -53,7 +67,6 @@
 
     //Read the data
     (function readData(data) {
-      console.log("data loaded:", data);
       svg
         .selectAll()
         .data(data, function (d) {
@@ -72,6 +85,6 @@
         .style("fill", function (d) {
           return myColor(d.value);
         });
-    })(deviceHists);
+    })(recordsByOccurence);
   </script>
 </body>
