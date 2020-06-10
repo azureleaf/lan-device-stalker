@@ -4,13 +4,11 @@
 </head>
 <body>
   <script src="https://d3js.org/d3.v4.js"></script>
-  <div id="device_occurence_chart"></div>
-
-  <script src="./devices.js"></script>
+  <div id="my_dataviz"></div>
 
   <script>
     // set the dimensions and margins of the graph
-    var margin = { top: 30, right: 30, bottom: 30, left: 100 },
+    var margin = { top: 30, right: 30, bottom: 30, left: 30 },
       // width:height ratio can be changed
       // chart will be stretched, but text labels won't be
       width = 1000 - margin.left - margin.right,
@@ -18,7 +16,7 @@
 
     // append the svg object to the body of the page
     var svg = d3
-      .select("#device_occurence_chart") // getElementById() equivalent
+      .select("#my_dataviz") // getElementById() equivalent
       .append("svg") // appendChild() equivalent
       .attr("width", width + margin.left + margin.right) // setAttribute() equivalent
       .attr("height", height + margin.top + margin.bottom)
@@ -26,14 +24,11 @@
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")"); // SVG offset
 
     // Labels of row and columns
-    var timeStamps = [
-      "2020-06-10 11:30:01.982251",
-      "2020-06-10 12:00:01.982251",
-    ]; // x-label
-    var devices = ["a0:b0:c0:d0:e0:f0", "a1:b0:c0:d0:e0:f0"]; // y-label
+    var myGroups = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]; // x-label
+    var myVars = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"]; // y-label
 
     // Build X scales and axis:
-    var x = d3.scaleBand().range([0, width]).domain(timeStamps).padding(0.01);
+    var x = d3.scaleBand().range([0, width]).domain(myGroups).padding(0.01);
 
     svg
       .append("g")
@@ -44,34 +39,37 @@
     var y = d3
       .scaleBand() // very basic scale
       .range([height, 0])
-      .domain(devices) // y-label
+      .domain(myVars) // label
       .padding(0.01); // gap between tiles
     svg.append("g").call(d3.axisLeft(y)); // .call() is used to apply func(s) to selections
 
     // Build color scale
-    var myColor = d3.scaleLinear().range(["white", "orange"]).domain([0, 1]);
+    var myColor = d3.scaleLinear().range(["white", "#69b3a2"]).domain([1, 100]);
 
     //Read the data
-    (function readData(data) {
-      console.log("data loaded:", data);
-      svg
-        .selectAll()
-        .data(data, function (d) {
-          return d.group + ":" + d.variable;
-        })
-        .enter()
-        .append("rect")
-        .attr("x", function (d) {
-          return x(d.group);
-        })
-        .attr("y", function (d) {
-          return y(d.variable);
-        })
-        .attr("width", x.bandwidth())
-        .attr("height", y.bandwidth())
-        .style("fill", function (d) {
-          return myColor(d.value);
-        });
-    })(deviceHists);
+    d3.csv(
+      "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/heatmap_data.csv",
+      function (data) {
+        console.log("csv data:", data);
+        svg
+          .selectAll()
+          .data(data, function (d) {
+            return d.group + ":" + d.variable;
+          })
+          .enter()
+          .append("rect")
+          .attr("x", function (d) {
+            return x(d.group);
+          })
+          .attr("y", function (d) {
+            return y(d.variable);
+          })
+          .attr("width", x.bandwidth())
+          .attr("height", y.bandwidth())
+          .style("fill", function (d) {
+            return myColor(d.value);
+          });
+      }
+    );
   </script>
 </body>
