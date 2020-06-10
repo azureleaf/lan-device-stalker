@@ -131,12 +131,22 @@ def summarize_db(db_path, devices):
     engine = create_engine(db_path)
     conn = engine.connect()
 
-    # Fetch all the mac addresses
+    # Fetch all the unique mac addresses
     query = db.select([devices.columns.mac_addr.distinct()]
                       ).order_by(db.desc(devices.columns.mac_addr))
-    mac_addrs = conn.execute(query).fetchall()
+    mac_addrs = conn.execute(query).fetchall()  # list of tuples
+
+    # Fetch all the unique timestamps
+    query = db.select([devices.columns.created_at.distinct()]
+                      ).order_by(db.desc(devices.columns.created_at))
+    timestamps = conn.execute(query).fetchall()  # list of tuples
 
     # Get occurences of every device
+    deviceStats = {
+        "occs": [],
+        "macAddrs": [list(a_tuple)[0] for a_tuple in mac_addrs],
+        "timestamps": [list(a_tuple)[0] for a_tuple in timestamps]
+    }
     devices_occs = []  # Occurences of all the devices
     for mac_addr in mac_addrs:
         query = db.select([devices]) \
@@ -145,12 +155,12 @@ def summarize_db(db_path, devices):
         # Occurence of this device
         device_occs = conn.execute(query).fetchall()
 
-        devices_occs.append({
+        deviceStats["occs"].append({
             "mac_addr": mac_addr.mac_addr,
             "occ": [device_occ.created_at for device_occ in device_occs]
         })
 
-    return devices_occs
+    return deviceStats
 
 
 def next_run_time(interval_min):
@@ -183,8 +193,8 @@ def wrapper():
     # params
     db_path = "sqlite:///devices.db"
     js_path = "history.js"
-    interval_min = 1
-    cycle_total = 2
+    interval_min = 0
+    cycle_total = 0
 
     # define the table
     engine = create_engine(db_path)
@@ -212,14 +222,30 @@ def wrapper():
 
     # Save DB contents as a constant in the JS file
     # to embed them in the web page
-    occs_devices = summarize_db(db_path, devices_table)
+    deviceStats = summarize_db(db_path, devices_table)
     with open(js_path, "w") as fo:
-        fo.write("const history = [\n")
-        for occs_device in occs_devices:
+
+        # Write occurences
+        fo.write("const recordsByDevice = [\n")
+        for occs_device in deviceStats["occs"]:
             fo.write(f"  {str(occs_device)},\n")
+        fo.write("];\n\n")
+
+
+        # Write Timestamps
+        fo.write("const timestamps = [\n")
+        for timestamp in deviceStats["timestamps"]:
+            fo.write(f"  \'{str(timestamp)}\',\n")
+        fo.write("];\n\n")
+
+        # Write Mac Addresses
+        fo.write("const macAddrs = [\n")
+        for macAddr in deviceStats["macAddrs"]:
+            fo.write(f"  \'{str(macAddr)}\',\n")
         fo.write("];\n")
-        logger.info(
-            "Successfully summarized the scan results to the JS file.")
+
+    logger.info(
+        "Successfully summarized the scan results to the JS file.")
 
 
 if __name__ == "__main__":
