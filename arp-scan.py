@@ -195,8 +195,8 @@ def wrapper():
     # params
     db_path = "sqlite:///devices.db"
     js_path = "history.js"
-    interval_min = 0
-    cycle_total = 0
+    interval_min = 15
+    cycle_total = 11
 
     # define the table
     engine = create_engine(db_path)

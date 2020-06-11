@@ -31,8 +31,9 @@
    - You need to install arp-scan in your local env
 1. `pipenv shell`
 1. `pipenv install`
-1. `sudo $(PIPENV_IGNORE_VIRTUALENVS=1 pipenv --venv)/bin/python3 arp-scan.py`
-   - Scapy requires `sudo`, however you can't use `sudo python3 app.py` with pipenv
+1. `sh scan.sh`
+   - This script runs `sudo $(PIPENV_IGNORE_VIRTUALENVS=1 pipenv --venv)/bin/python3 arp-scan.py`
+   - Arp-scan requires `root` privilege, however simply running `sudo python3 app.py` with pipenv won't work
    - Therefore you need to specify the Python of the pipenv directly
 
 ### (alternative) Scan with Scapy
