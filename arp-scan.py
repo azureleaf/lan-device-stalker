@@ -132,13 +132,15 @@ def summarize_db(db_path, devices):
     conn = engine.connect()
 
     # Fetch all the unique mac addresses
-    query = db.select([devices.columns.mac_addr.distinct()]
-                      ).order_by(db.desc(devices.columns.mac_addr))
+    query = db \
+        .select([devices.columns.mac_addr.distinct()]) \
+        .order_by(db.desc(devices.columns.mac_addr))
     mac_addrs = conn.execute(query).fetchall()  # list of tuples
 
     # Fetch all the unique timestamps
-    query = db.select([devices.columns.created_at.distinct()]
-                      ).order_by(db.desc(devices.columns.created_at))
+    query = db \
+        .select([devices.columns.created_at.distinct()]) \
+        .order_by(devices.columns.created_at)
     timestamps = conn.execute(query).fetchall()  # list of tuples
 
     # Get occurences of every device
@@ -151,7 +153,7 @@ def summarize_db(db_path, devices):
     for mac_addr in mac_addrs:
         query = db.select([devices]) \
             .where(devices.columns.mac_addr == mac_addr.mac_addr) \
-            .order_by(db.desc(devices.columns.created_at))
+            .order_by(devices.columns.created_at)
         # Occurence of this device
         device_occs = conn.execute(query).fetchall()
 
@@ -231,7 +233,6 @@ def wrapper():
             fo.write(f"  {str(occs_device)},\n")
         fo.write("];\n\n")
 
-
         # Write Timestamps
         fo.write("const timestamps = [\n")
         for timestamp in deviceStats["timestamps"]:
@@ -245,7 +246,7 @@ def wrapper():
         fo.write("];\n")
 
     logger.info(
-        "Successfully summarized the scan results to the JS file.")
+        f'Successfully summarized the scan results to: {js_path}')
 
 
 if __name__ == "__main__":
