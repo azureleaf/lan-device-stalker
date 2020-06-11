@@ -27,6 +27,18 @@
       .append("g") // <g> is a tag to group graphic elements (<line>, <rect>, etc.) inside <svg>
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")"); // SVG offset
 
+    // Append the chart title
+    svg
+      .append("text")
+      .attr("x", width / 2)
+      .attr("y", 0 - margin.top / 2)
+      .attr("text-anchor", "middle")
+      .style("font-size", "16px")
+      .style("font-family", "sans-serif")
+      .style("font-weight", "bold")
+      .style("text-decoration", "underline")
+      .text("Timeline of Devices Responded to ARP Broadcast");
+
     // Format the device occurence history for D3.js
     const recordsByOccurence = (function formatRecords(devices) {
       occs4all = [];
