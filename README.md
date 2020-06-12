@@ -8,7 +8,7 @@
   - [ToC](#toc)
   - [Run](#run)
     - [(alternative) Scan with Scapy](#alternative-scan-with-scapy)
-  - [Reference](#reference)
+  - [Files](#files)
   - [About Scapy](#about-scapy)
     - [Interactive Shell](#interactive-shell)
   - [Terms](#terms)
@@ -42,10 +42,30 @@ This script is like `arp-can.py`, but only can retrieve MAC address of devices. 
 
 1. `sudo $(PIPENV_IGNORE_VIRTUALENVS=1 pipenv --venv)/bin/python3 scapy-scan.py`
 
-## Reference
+## Files
 
-- MAC address vendor list: https://macaddress.io/database-download
-
+- `scan.sh`
+- `arp-scan.py`
+  - Run `arp-scan`, save to SQLite DB & JS file
+- `scapy-scan.py`
+  - Do similar thing to `arp-scan.py`, but doesn't have the function to store to DB
+- `/devices.db`
+  - SQLite DB with the table `devices`
+  - Automatically created after successful run of `arp-scan.py`
+  - This is being `.gitignore`
+- `/history.js`
+  - Automatically created after successful run of `arp-scan.py`
+  - Contents is same as SQLite DB, however converted into D3.js-friendly format
+  - This is being `.gitignore`
+- `/vendors/parse_json.py`
+  - Parse JSON file of the MAC vendors into JSON
+  - Download source JSON file from "MAC address vendor list" ( https://macaddress.io/database-download )
+- `/vendors/mac_vendor.js`
+  - Conversion result of the JSON file
+  - This file is available, but not used in my proj for now
+- `refs`
+  - Copy of the Scapy script made by a GitHub user
+  
 ## About Scapy
 
 ### Interactive Shell
