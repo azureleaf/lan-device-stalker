@@ -5,6 +5,7 @@ import socket
 import sched
 import time
 import logging
+import paths
 import sqlalchemy as db
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 from datetime import datetime, timedelta
@@ -192,14 +193,12 @@ def next_run_time(interval_min):
 
 
 def wrapper():
-    # params
-    db_path = "sqlite:///devices.db"
-    js_path = "history.js"
+    # Set scan params
     interval_min = 15
-    cycle_total = 11
+    cycle_total = 0
 
     # define the table
-    engine = create_engine(db_path)
+    engine = create_engine(paths.db)
     meta = MetaData(engine)
     devices_table = Table('devices', meta,
                           Column('id', Integer, primary_key=True),
@@ -213,8 +212,9 @@ def wrapper():
         '''scanning process'''
         interface = get_interface()
         devices = get_devices(interface)
-        save_to_db(devices, db_path, devices_table)
+        save_to_db(devices, paths.db, devices_table)
 
+    # Scan devices repeatedly till the goal counts
     cycle_count = 0
     while cycle_count < cycle_total:
         s = sched.scheduler(time.time, time.sleep)
@@ -224,8 +224,8 @@ def wrapper():
 
     # Save DB contents as a constant in the JS file
     # to embed them in the web page
-    deviceStats = summarize_db(db_path, devices_table)
-    with open(js_path, "w") as fo:
+    deviceStats = summarize_db(paths.db, devices_table)
+    with open(paths.js_unmasked, "w") as fo:
 
         # Write occurences
         fo.write("const recordsByDevice = [\n")
@@ -246,7 +246,7 @@ def wrapper():
         fo.write("];\n")
 
     logger.info(
-        f'Successfully summarized the scan results to: {js_path}')
+        f'Successfully summarized the scan results to: {paths.js_unmasked}')
 
 
 if __name__ == "__main__":
