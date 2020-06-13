@@ -192,6 +192,15 @@ def next_run_time(interval_min):
             continue
 
 
+def maskAddr(addr_unmasked, index):
+
+    # Get 5 digits number filled with 0
+    # e.g. 52 => 00052, 122 => 00122
+    indexStr = (5 - len(str(index))) * "0" + str(index)
+
+    return f"Device #{indexStr} ({addr_unmasked[0:9]}xx:xx:xx)"
+
+
 def wrapper():
     # Set scan params
     interval_min = 15
@@ -241,7 +250,8 @@ def wrapper():
 
         # Write Mac Addresses
         fo.write("const macAddrs = [\n")
-        for macAddr in deviceStats["macAddrs"]:
+        for index, macAddr in enumerate(deviceStats["macAddrs"]):
+            print(maskAddr(macAddr, index))
             fo.write(f"  \'{str(macAddr)}\',\n")
         fo.write("];\n")
 
