@@ -1,3 +1,3 @@
 db = "sqlite:///devices.db"
-js_unmasked = "history.js"
+js_unmasked = "historyUnmasked.js"
 js_masked = "historyMasked.js"

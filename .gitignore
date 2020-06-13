@@ -3,6 +3,7 @@
 *.db
 macaddress.io-db.json
 macAddrsMapping.json
+historyUnmasked.js
 history.js
 
 # Byte-compiled / optimized / DLL files
