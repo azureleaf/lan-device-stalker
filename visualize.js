@@ -1,8 +1,11 @@
 const squareSize = 30;
 const squarePadding = 0.1;
 
+// Sample the character length of the y-label
+const yLabelLength = macAddrs[0].length;
+
 // set the dimensions and margins of the graph
-const margin = { top: 30, right: 30, bottom: 100, left: 100 },
+const margin = { top: 30, right: 30, bottom: 100, left: yLabelLength * 6 },
   // Graph area
   width = squareSize * timestamps.length,
   height = squareSize * macAddrs.length;
@@ -70,10 +73,7 @@ const y = d3
 svg.append("g").call(d3.axisLeft(y)); // .call() is used to apply func(s) to selections
 
 // Build color scale
-const myColor = d3
-  .scaleLinear()
-  .range(["white", "crimson"])
-  .domain([0, 1]);
+const myColor = d3.scaleLinear().range(["white", "crimson"]).domain([0, 1]);
 
 //Read the data
 (function readData(data) {
