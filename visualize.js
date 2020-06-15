@@ -72,7 +72,7 @@ svg.append("g").call(d3.axisLeft(y)); // .call() is used to apply func(s) to sel
 // Build color scale
 const myColor = d3
   .scaleLinear()
-  .range(["white", "dodgerblue"])
+  .range(["white", "crimson"])
   .domain([0, 1]);
 
 //Read the data
