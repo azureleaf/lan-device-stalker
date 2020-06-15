@@ -5,13 +5,14 @@ import socket
 import sched
 import time
 import logging
+import paths
 import sqlalchemy as db
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 from datetime import datetime, timedelta
 
 # Set up the logger
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)  # function name
+logger = logging.getLogger(__name__)  # __name__ is the function name
 
 
 def get_interface():
@@ -127,6 +128,15 @@ def summarize_db(db_path, devices):
     """
     Check the records of devices responded to ARP-SCAN,
     return occurences summary of every device
+
+    Args:
+        db_path (str): File path to the SQLite DB
+        devices: 
+    Returns:
+        (obj) MAC addrs & occurences. Has 3 keys:
+            "occs" ([Obj]): MAC addressess and its occurence timestamps by device
+            "timestamps" ([]): Unique timestamps for all the scans
+            "macAddrs" ([]):  Unique MAC addresses for all the scans
     """
     engine = create_engine(db_path)
     conn = engine.connect()
@@ -171,7 +181,7 @@ def next_run_time(interval_min):
     Args:
         interval_min (int): interval between runs in minutes.
             Should be the divisor of 60: 60, 30, 20, 10, 6, 3, 2, 1
-    Returns
+    Returns:
         (obj) datetime object of the next run time
     """
     now = datetime.now()
@@ -191,15 +201,38 @@ def next_run_time(interval_min):
             continue
 
 
+def maskAddr(addr_unmasked, index):
+    '''Convert the MAC address to the anonymous unique name'''
+
+    # Get 5 digits number filled with 0
+    # e.g. 52 => 00052, 122 => 00122
+    indexStr = (5 - len(str(index))) * "0" + str(index)
+
+    return f"Device #{indexStr} ({addr_unmasked[0:9]}xx:xx:xx)"
+
+
+def getMaskMapping(addrs):
+    '''
+        Return the list of dict of raw address & masked address for it
+    '''
+    mapping = []
+    for index, addr in enumerate(addrs):
+        mapping.append(
+            {
+                "unmasked": addr,
+                "masked": maskAddr(addr, index)
+            }
+        )
+    return mapping
+
+
 def wrapper():
-    # params
-    db_path = "sqlite:///devices.db"
-    js_path = "history.js"
+    # Set scan params
     interval_min = 15
-    cycle_total = 11
+    cycle_total = 0
 
     # define the table
-    engine = create_engine(db_path)
+    engine = create_engine(paths.db)
     meta = MetaData(engine)
     devices_table = Table('devices', meta,
                           Column('id', Integer, primary_key=True),
@@ -213,8 +246,9 @@ def wrapper():
         '''scanning process'''
         interface = get_interface()
         devices = get_devices(interface)
-        save_to_db(devices, db_path, devices_table)
+        save_to_db(devices, paths.db, devices_table)
 
+    # Scan devices repeatedly till the goal counts
     cycle_count = 0
     while cycle_count < cycle_total:
         s = sched.scheduler(time.time, time.sleep)
@@ -224,8 +258,10 @@ def wrapper():
 
     # Save DB contents as a constant in the JS file
     # to embed them in the web page
-    deviceStats = summarize_db(db_path, devices_table)
-    with open(js_path, "w") as fo:
+    deviceStats = summarize_db(paths.db, devices_table)
+
+    # Output the unmasked MAC Address
+    with open(paths.js_unmasked, "w") as fo:
 
         # Write occurences
         fo.write("const recordsByDevice = [\n")
@@ -241,12 +277,52 @@ def wrapper():
 
         # Write Mac Addresses
         fo.write("const macAddrs = [\n")
-        for macAddr in deviceStats["macAddrs"]:
+        for index, macAddr in enumerate(deviceStats["macAddrs"]):
             fo.write(f"  \'{str(macAddr)}\',\n")
         fo.write("];\n")
 
     logger.info(
-        f'Successfully summarized the scan results to: {js_path}')
+        f'Successfully summarized the scan results to: {paths.js_unmasked}')
+
+    # Output the masked MAC Address
+    with open(paths.js_masked, "w") as fo_masked:
+
+        # Get the mappings from the raw addrs to masked addrs
+        mappings = getMaskMapping(deviceStats["macAddrs"])
+
+        # Mask individual occurences
+        for device in deviceStats["occs"]:
+            for mapping in mappings:
+                device["mac_addr"] = device["mac_addr"].replace(
+                    mapping["unmasked"], mapping["masked"])
+
+        # Mask MAC address list
+        for index, addr in enumerate(deviceStats["macAddrs"]):
+            # print(index, addr)
+            for mapping in mappings:
+                if addr == mapping["unmasked"]:
+                    deviceStats["macAddrs"][index] = mapping["masked"]
+
+        # Write occurences
+        fo_masked.write("const recordsByDevice = [\n")
+        for occs_device in deviceStats["occs"]:
+            fo_masked.write(f"  {str(occs_device)},\n")
+        fo_masked.write("];\n\n")
+
+        # Write Timestamps
+        fo_masked.write("const timestamps = [\n")
+        for timestamp in deviceStats["timestamps"]:
+            fo_masked.write(f"  \'{str(timestamp)}\',\n")
+        fo_masked.write("];\n\n")
+
+        # Write Mac Addresses
+        fo_masked.write("const macAddrs = [\n")
+        for index, macAddr in enumerate(deviceStats["macAddrs"]):
+            fo_masked.write(f"  \'{str(macAddr)}\',\n")
+        fo_masked.write("];\n")
+
+    logger.info(
+        f'Successfully summarized the scan results to: {paths.js_masked}')
 
 
 if __name__ == "__main__":
