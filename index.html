@@ -2,8 +2,49 @@
 <head>
   <meta charset="utf-8" />
   <title>ARP Responses</title>
+  <style>
+    b {
+      color: crimson;
+    }
+  </style>
 </head>
 <body>
+  <div style="border: 1px solid grey; margin: 20px; padding: 20px;">
+    <h1>
+      LAN Device Stalker Project (<a
+        href="https://github.com/azureleaf/lan-device-stalker"
+        >GitHub</a
+      >)
+    </h1>
+    <h2>
+      見方
+    </h2>
+    <ul>
+      <li>
+        Pythonスクリプトを使って15分おきに自動でARPブロードキャストを実際に飛ばした結果です。
+      </li>
+      <li>
+        色付きで表示されているセルは、<b>その時間にそのデバイスがARP-SCANに反応した</b>ことを示しています。
+      </li>
+      <li>
+        X軸が時間、Y軸がデバイスを示しています。ただしプライバシー保護のため、MACアドレスの下位部分は規則的に置換し隠しています。
+      </li>
+    </ul>
+    <h2>用途</h2>
+    <ul>
+      <li>
+        この表からわかる情報は限られていますが、タイムカードや目視による在室確認も併せて行うことで<b>「それぞれのデバイスの所有者が誰なのか」</b>を推測することができます。NICのベンダー情報も参考になります。
+      </li>
+      <li>
+        個人とMACアドレスの紐づけができると、以下のチャートから<b>「その人がどの時間に在室していたのか」</b>をある程度推測できます。
+      </li>
+      <li>共有PCそれぞれの使用頻度などを調べるのにも使えるかもしれません。</li>
+      <li>
+        MACアドレスがバレただけでは得られる情報は限られていますが、ネットワークに無闇に接続すると自分の情報がある程度は伝わってしまうんだなあ...というのが今回の私の感慨です。
+      </li>
+    </ul>
+  </div>
+
   <script src="https://d3js.org/d3.v4.js"></script>
   <div id="device_occurence_chart"></div>
 
